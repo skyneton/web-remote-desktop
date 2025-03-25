@@ -1,0 +1,29 @@
+body:not([connected]) canvas { display: none; }
+body[connected] .login-form { display: none; }
+body[connected] { display: flex; }
+canvas {
+    margin: auto;
+}
+canvas[cursor=none] { cursor: none !important; }
+canvas[cursor=default] { cursor: default; }
+canvas[cursor=text] { cursor: text; }
+canvas[cursor=wait] { cursor: wait; }
+canvas[cursor=crosshair] { cursor: crosshair; }
+canvas[cursor=nwse-resize] { cursor: nwse-resize; }
+canvas[cursor=nesw-resize] { cursor: nesw-resize; }
+canvas[cursor=ew-resize] { cursor: ew-resize; }
+canvas[cursor=ns-resize] { cursor: ns-resize; }
+canvas[cursor=move] { cursor: move; }
+canvas[cursor=not-allowed] { cursor: not-allowed; }
+canvas[cursor=progress] { cursor: progress; }
+canvas[cursor=pointer] { cursor: pointer; }
+canvas[cursor=grabbing] { cursor: grabbing; }
+canvas[cursor=alias] { cursor: alias; }
+canvas[cursor=col-resize] { cursor: col-resize; }
+canvas[cursor=vertical-text] { cursor: vertical-text; }
+canvas[cursor=zoom-in] { cursor: zoom-in; }
+canvas[cursor=cell] { cursor: cell; }
+canvas[cursor=grab] { cursor: grab; }
+canvas[cursor=row-resize] { cursor: row-resize; }
+canvas[cursor=copy] { cursor: copy; }
+canvas[cursor=zoom-out] { cursor: zoom-out; }
