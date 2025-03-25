@@ -101,7 +101,7 @@ function receiveCursorType(packet) {
         case 65557: postMessage({type: 3, value: "move"}); break;
         case 65559: postMessage({type: 3, value: "not-allowed"}); break;
         case 65561: postMessage({type: 3, value: "progress"}); break;
-        case 65563: postMessage({type: 3, value: "pointer"}); break;
+        case 65567: postMessage({type: 3, value: "pointer"}); break;
         case 13896596: postMessage({type: 3, value: "grabbing"}); break;
         case 31327887: postMessage({type: 3, value: "alias"}); break;
         case 32770565: postMessage({type: 3, value: "col-resize"}); break;
@@ -213,6 +213,7 @@ async function receiveFullScreen(packet) {
     const image = await createImageBitmap(new Blob([packet.read(packet.readableLength)]));
     canvas.width = image.width;
     canvas.height = image.height;
+    context2d.clearRect(0, 0, canvas.width, canvas.height);
     context2d.drawImage(image, 0, 0);
     image.close();
 }
