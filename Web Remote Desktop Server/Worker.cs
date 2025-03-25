@@ -48,6 +48,7 @@ namespace WebRemoteDesktopServer
 
             server = new WebServer(config.Address, config.Port);
             server.Pages.Add("/", new WebHtmlIndexPage());
+            server.Pages.Add("/audio-processor.js", new WebJavascriptAudioProcessorPage());
             server.Pages.Add("/bytebuf.js", new WebJavascriptByteBufPage());
             server.Pages.Add("/main.js", new WebJavascriptMainPage());
             server.Pages.Add("/socket.js", new WebJavascriptSocketPage(config.SocketAmount));

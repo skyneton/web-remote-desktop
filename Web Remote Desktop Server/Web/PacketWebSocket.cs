@@ -12,7 +12,7 @@ namespace WebRemoteDesktopServer.Web
     class PacketWebSocket
     {
         public static int MaxSocketIdx { get; private set; } = 3;
-        private static readonly HashSet<PacketWebSocket>[] Sockets = new HashSet<PacketWebSocket>[MaxSocketIdx];
+        private static HashSet<PacketWebSocket>[] Sockets;
         public static int Count => Sockets[0].Count;
         private readonly WebSocket socket;
         private readonly int socketIdx;
@@ -27,6 +27,7 @@ namespace WebRemoteDesktopServer.Web
         public static void ChangeSocketAmount(int amount)
         {
             MaxSocketIdx = Math.Max(1, amount);
+            Sockets = new HashSet<PacketWebSocket>[MaxSocketIdx];
             for (var i = 0; i < MaxSocketIdx; i++)
             {
                 Sockets[i] = [];
