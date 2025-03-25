@@ -9,7 +9,7 @@
         "BitsPerSample": 16,
         "Channels": 2
     },
-    // 0: 3 bytes pixel, 1: 2bytes pixel
+    "__comment__": "0: 3 bytes pixel, 1: 2bytes pixel",
     "ImageQuality": 1,
     "FramePerSecond": 30
 }
