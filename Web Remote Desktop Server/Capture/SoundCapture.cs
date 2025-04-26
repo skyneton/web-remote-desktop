@@ -1,5 +1,4 @@
-﻿using NAudio.CoreAudioApi;
-using NAudio.Wave;
+﻿using NAudio.Wave;
 using WebRemoteDesktopServer.Packet.Out;
 using WebRemoteDesktopServer.Web;
 

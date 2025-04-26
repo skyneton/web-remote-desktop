@@ -1,10 +1,10 @@
 {
-    "Password":  "",
+    "Password": "ehddls0322.qwer1234",
     "Address": "https://*",
-    "Port": 80,
-    "SocketAmount": 3,
+    "Port": 25565,
+    "SocketAmount": 4,
     "Audio": {
-        "Allow":  true,
+        "Allow": true,
         "SampleRate": 44100,
         "BitsPerSample": 16,
         "Channels": 2

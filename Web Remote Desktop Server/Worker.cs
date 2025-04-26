@@ -23,7 +23,7 @@ namespace WebRemoteDesktopServer
         public void Execute()
         {
             LoadConfig();
-            if(AllowAudio) soundCapture.Start();
+            if (AllowAudio) soundCapture.Start();
             while (true)
             {
                 try
@@ -50,8 +50,8 @@ namespace WebRemoteDesktopServer
             server.Pages.Add("/", new WebHtmlIndexPage());
             server.Pages.Add("/audio-processor.js", new WebJavascriptAudioProcessorPage());
             server.Pages.Add("/bytebuf.js", new WebJavascriptByteBufPage());
-            server.Pages.Add("/main.js", new WebJavascriptMainPage());
-            server.Pages.Add("/socket.js", new WebJavascriptSocketPage(config.SocketAmount));
+            server.Pages.Add("/main.js", new WebJavascriptMainPage(config.SocketAmount));
+            server.Pages.Add("/socket.js", new WebJavascriptSocketPage());
             server.Pages.Add("/style.css", new WebCssStylePage());
 
             PacketWebSocket.ChangeSocketAmount(config.SocketAmount);

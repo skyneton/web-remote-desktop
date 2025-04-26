@@ -12,6 +12,7 @@ namespace WebRemoteDesktopServer.Web
             ServicePointManager.MaxServicePointIdleTime = int.MaxValue;
             listener.TimeoutManager.MinSendBytesPerSecond = 0;
             listener.Prefixes.Add($"{domain}:{port}/");
+            listener.AuthenticationSchemes = AuthenticationSchemes.Anonymous;
             listener.Start();
             listener.BeginGetContext(WebRequestCallback, null);
         }
@@ -33,13 +34,19 @@ namespace WebRemoteDesktopServer.Web
                     if (context.Request.IsWebSocketRequest)
                     {
                         context.Response.KeepAlive = true;
+                        context.Response.AddHeader("Cross-Origin-Embedder-Policy", "require-corp");
+                        context.Response.AddHeader("Cross-Origin-Opener-Policy", "same-origin");
                         PacketWebSocket.WebSocketHandler(context);
                     }
                     else
                     {
                         Pages.TryGetValue(context.Request.Url.AbsolutePath, out var page);
                         if (page != null)
+                        {
+                            context.Response.AddHeader("Cross-Origin-Embedder-Policy", "require-corp");
+                            context.Response.AddHeader("Cross-Origin-Opener-Policy", "same-origin");
                             page.Write(context.Response);
+                        }
                         else
                             context.Response.StatusCode = 404;
 

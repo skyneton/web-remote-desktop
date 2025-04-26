@@ -43,7 +43,7 @@ namespace WebRemoteDesktopServer.Web
         public static async Task WebSocketHandler(HttpListenerContext context)
         {
             var socket = (await context.AcceptWebSocketAsync(null))?.WebSocket;
-            int.TryParse(context.Request.Url.AbsolutePath.Substring(1), out var idx);
+            int.TryParse(context.Request.Url.AbsolutePath.AsSpan(1), out var idx);
             if (socket?.State != WebSocketState.Open) return;
             idx %= MaxSocketIdx;
             var ws = new PacketWebSocket(socket, idx);
@@ -55,10 +55,10 @@ namespace WebRemoteDesktopServer.Web
             if (idx == 0)
             {
                 SetResolution(ws);
-                await ws.SendPacket(new PacketOutChunkInfo((byte)Worker.CurrentImageProcess.Quality));
                 SendScreen(ws);
                 await ws.SendPacket(new PacketOutCursorType(Worker.CursorInfo));
             }
+            await ws.SendPacket(new PacketOutChunkInfo((byte)Worker.CurrentImageProcess.Quality));
             lock (Sockets)
             {
                 Sockets[idx].Add(ws);
@@ -195,7 +195,7 @@ namespace WebRemoteDesktopServer.Web
         {
             var info = DisplaySettings.GetResolution();
             using var screen = ScreenCapture.Screenshot(info.Width, info.Height, Worker.CurrentImageProcess.Format);
-            socket.SendPacket(new PacketOutImageFullScreen(ImageCompress.PixelToImage(screen, ImageFormat.Jpeg)));
+            socket.SendPacket(new PacketOutImageFullScreen(screen.Width, screen.Height, ImageCompress.PixelToImage(screen, ImageFormat.Jpeg)));
         }
 
         public Task? SendPacket(IPacket packet)

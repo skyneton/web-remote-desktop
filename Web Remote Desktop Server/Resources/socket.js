@@ -1,40 +1,44 @@
 importScripts("./bytebuf.js");
-const ws = [];
-const COUNT = %{SOCKET_COUNT}%;
-const PATH = (location.protocol.startsWith("https") ? "wss://" : "ws://") + location.host;
-for(let i = 0; i < COUNT; i++) {
-    const socket = ws[i] = new WebSocket(`${PATH}/${i}`);
-    socket.onclose = () => postMessage({type: 1});
-    socket.onopen = checkOpenFinished;
-    socket.onerror = e => console.log(e);
-    socket.onmessage = receiveMessage;
-}
 
-function checkOpenFinished() {
-    for(let i = 0; i < COUNT; i++) {
-        if(!ws[i] || ws[i].readyState != 1) return;
-    }
-    postMessage({type: 0});
-}
-
-let canvas, context2d, chunkType;
+let ws, buffer, canvas, context2d, chunkType, drawId;
 
 self.onmessage = e => {
     const data = e.data;
     switch(data.type) {
         case "canvas":
             canvas = data.value;
+            // context2d = canvas.getContext("2d");
             context2d = canvas.getContext("2d");
+            startDraw.call(null);
             break;
         case "packet":
-            ws[0].send(data.value);
+            ws.send(data.value);
             break;
-        case "br":
-            for(let i = 0; i < COUNT; i++)
-                ws[i].send(data.value);
+        case "buffer":
+            buffer = data.value;
+            break;
+        case "socket":
+            const PATH = (location.protocol.startsWith("https") ? "wss://" : "ws://") + location.host;
+            ws = new WebSocket(`${PATH}/${data.value}`);
+            ws.onclose = () => postMessage({type: 1});
+            ws.onopen = () => postMessage({type: 0});
+            ws.onerror = e => console.log(e);
+            ws.onmessage = receiveMessage;
             break;
     }
 };
+
+function startDraw() {
+    drawId = setInterval(() => {
+        if(canvas.width * canvas.height * 4 != (buffer?.length ?? 0)) return;
+        const imageData = new ImageData(canvas.width, canvas.height);
+        imageData.data.set(buffer);
+        context2d.putImageData(imageData, 0, 0);
+        // const glBuffer = gl.createBuffer();
+        // gl.bindBuffer(gl.ARRAY_BUFFER, glBuffer);
+        // gl.bufferData(gl.ARRAY_BUFFER, buffer, gl.STATIC_DRAW);
+    }, 5);
+}
 
 async function receiveMessage(e) {
     const buf = new ByteBuf(new Uint8Array(await e.data.arrayBuffer()));
@@ -123,7 +127,7 @@ async function receiveScreenChunk(packet) {
             await drawCompressChunk(pixels, packet);
             break;
         default:
-            await drawRawChunk(pixels, packet);
+            drawRawChunk(pixels, packet);
             break;
     }
 }
@@ -169,51 +173,99 @@ function setImageData(imageData, pixels) {
     return idx;
 }
 
-async function drawRawChunk(pixels, packet) {
+function drawRawChunk(pixels, packet) {
+    if(!buffer) return;
     const pixelPer = 3 - chunkType;
     const imageData = new ImageData(pixels.length / pixelPer, 1);
     setImageData(imageData, pixels);
-    const image = await createImageBitmap(imageData);
-    drawImageDataChunk(image, packet);
-    image.close();
-}
-
-async function drawCompressChunk(pixels, packet) {
-    const image = await createImageBitmap(new Blob([pixels]));
-    drawImageDataChunk(image, packet);
-    image.close();
-}
-
-function drawImageDataChunk(image, packet) {
+    pixels = imageData.data;
+    
     let idx = 0;
     while (packet.readableLength > 0) {
-        const pos = packet.readVarInt();
-        let length = packet.readVarInt();
-        const dx = pos % canvas.width;
-        let dy = Math.floor(pos / canvas.width);
-        if (dx != 0) {
-            const w = Math.min(canvas.width - dx, length);
+        const pos = packet.readVarInt() * 4;
+        let length = packet.readVarInt() * 4;
+        buffer.set(pixels.subarray(idx, idx + length), pos);
+        idx += length;
+    }
 
-            context2d.drawImage(image, idx, 0, w, 1, dx, dy, w, 1);
-            idx += w;
-            length -= w;
-            dy++;
-        }
-        while (length) {
-            const w = Math.min(length, canvas.width);
-            context2d.drawImage(image, idx, 0, w, 1, 0, dy, w, 1);
-            idx += w;
-            length -= w;
-            dy++;
-        }
+    // let idx = 0;
+    // while (packet.readableLength > 0) {
+    //     const pos = packet.readVarInt() * 4;
+    //     const length = packet.readVarInt() * 4;
+    //     if((buffer?.length ?? 0) < pos + length) return;
+    //     for(let i = 0; i < length; i+=4) {
+    //         let r, g, b;
+            
+    //         switch(pixelPer) {
+    //             case 0:
+    //                 b = pixels[idx++];
+    //                 g = pixels[idx++];
+    //                 r = pixels[idx++];
+    //                 break;
+    //             case 1:
+    //                 // r = pixels[idx + 1] >> 3 << 3;
+    //                 // g = ((pixels[idx + 1] & 0b111) << 5) | (pixels[idx] >> 5) << 2;
+    //                 // b = (pixels[idx] & 0b11111) << 3;
+    //                 r = pixels[idx + 1] >> 3;
+    //                 g = ((pixels[idx + 1] & 0b111) << 3) | (pixels[idx] >> 5);
+    //                 b = pixels[idx] & 0b11111;
+
+    //                 b = (b * 527 + 23) >> 6;
+    //                 g = (g * 259 + 33) >> 6;
+    //                 r = (r * 527 + 23) >> 6;
+    //                 // b = pixels[idx] >> 3 << 3;
+    //                 // g = ((pixels[idx] & 7) << 5) | (pixels[idx + 1] >> 5 << 2);
+    //                 // r = (pixels[idx + 1] & 31) << 3;
+    //                 idx += 2;
+    //                 break;
+    //             case 2:
+    //                 b = Math.round((pixels[idx] >> 5) * 36.42857142857);
+    //                 g = Math.round(((pixels[idx] >> 2) & 7) * 36.42857142857);
+    //                 r = Math.round(((pixels[idx] << 1) & 7) * 36.42857142857);
+    //                 idx++;
+    //                 break;
+    //         }
+
+    //         buffer[pos + i] = r;
+    //         buffer[pos + i + 1] = g;
+    //         buffer[pos + i + 2] = b;
+    //         buffer[pos + i + 3] = 255;
+    //     }
+    // }
+}
+
+async function drawCompressChunk(data, packet) {
+    const image = await createImageBitmap(new Blob([data]));
+    const canvas = new OffscreenCanvas(image.width, image.height);
+    const context = canvas.getContext("2d");
+    context.drawImage(image, 0, 0);
+    image.close();
+
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    
+    let idx = 0;
+    while (packet.readableLength > 0) {
+        const pos = packet.readVarInt() * 4;
+        const length = packet.readVarInt() * 4;
+        buffer.set(pixels.subarray(idx, idx + length), pos);
+        idx += length;
     }
 }
 
 async function receiveFullScreen(packet) {
+    const width = packet.readVarInt();
+    const height = packet.readVarInt();
+    canvas.width = width;
+    canvas.height = height;
+
     const image = await createImageBitmap(new Blob([packet.read(packet.readableLength)]));
-    canvas.width = image.width;
-    canvas.height = image.height;
-    context2d.clearRect(0, 0, canvas.width, canvas.height);
-    context2d.drawImage(image, 0, 0);
+    const offscreen = new OffscreenCanvas(width, height);
+    const context = offscreen.getContext("2d");
+    context.drawImage(image, 0, 0);
     image.close();
+    const imageData = context.getImageData(0, 0, width, height);
+    const tempBuffer = new Uint8Array(new SharedArrayBuffer(width * height * 4));
+    tempBuffer.set(imageData.data);
+    buffer = tempBuffer;
+    postMessage({type: 4, value: buffer});
 }

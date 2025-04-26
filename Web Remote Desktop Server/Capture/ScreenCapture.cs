@@ -46,7 +46,7 @@ namespace WebRemoteDesktopServer.Capture
             screen.UnlockBits(bitmapData);
 
             if (force)
-                PacketWebSocket.Broadcast(new PacketOutImageFullScreen(ImageCompress.PixelToImage(screen, ImageFormat.Jpeg)), 0);
+                PacketWebSocket.Broadcast(new PacketOutImageFullScreen(screen.Width, screen.Height, ImageCompress.PixelToImage(screen, ImageFormat.Jpeg)), 0);
 
             var cursorInfo = LowBinder.GetCursorInfo(out var success);
             if (success && Worker.CursorInfo != cursorInfo.hCursor)

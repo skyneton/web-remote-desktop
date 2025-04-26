@@ -1,21 +1,34 @@
 window.onload = () => {
     const canvas = document.getElementsByClassName("screen")[0];
     const offscreen = canvas.transferControlToOffscreen();
-    const worker = new Worker("socket.js");
-    worker.onmessage = receiveMessage(worker);
-    worker.postMessage({ type: "canvas", value: offscreen }, [offscreen]);
+    const workers = [];
+    
+    const COUNT = "%{SOCKET_COUNT}%";
+    // const buffer = new Uint8Array(new SharedArrayBuffer(10));
+    for(let i = 0; i < COUNT; i++) {
+        workers[i] = new Worker("socket.js");
+        workers[i].onmessage = receiveMessage(workers, workers[i]);
+        workers[i].postMessage({ type: "socket", value: i });
+        // workers[i].postMessage({ type: "buffer", value: buffer });
+    }
+    workers[0].postMessage({ type: "canvas", value: offscreen }, [offscreen]);
 
     document.getElementsByClassName("login-btn")[0].addEventListener("click", e => {
-        if (!worker.connected) {
-            alert("Server is not connected. Please wait.");
-            return;
+        for(const worker of workers) {
+            if (!worker.connected) {
+                alert("Server is not connected. Please wait.");
+                return;
+            }
         }
         const buf = new ByteBuf();
         buf.writeString(document.getElementsByClassName("input-password")[0].value);
-        worker.postMessage({ type: "br", value: buf.flush() });
+        const packet = buf.flush();
+        for(const worker of workers) {
+            worker.postMessage({ type: "packet", value: packet });
+        }
         buf.writeVarInt(screen.availWidth);
         buf.writeVarInt(screen.availHeight);
-        worker.postMessage({ type: "packet", value: buf.flush() });
+        workers[0].postMessage({ type: "packet", value: buf.flush() });
         document.body.setAttribute("connected", true);
     });
 
@@ -28,7 +41,7 @@ window.onload = () => {
         buf.writeVarInt(e.which || e.keyCode);
         // buf.writeString(e.code);
         // buf.writeString(e.key);
-        worker.postMessage({ type: "packet", value: buf.flush() });
+        workers[0].postMessage({ type: "packet", value: buf.flush() });
     });
 
     document.addEventListener("keyup", e => {
@@ -40,7 +53,7 @@ window.onload = () => {
         buf.writeVarInt(e.which || e.keyCode);
         // buf.writeString(e.code);
         // buf.writeString(e.key);
-        worker.postMessage({ type: "packet", value: buf.flush() });
+        workers[0].postMessage({ type: "packet", value: buf.flush() });
     });
 
     canvas.addEventListener("contextmenu", e => e.preventDefault());
@@ -53,7 +66,7 @@ window.onload = () => {
         buf.writeVarInt(2);
         buf.writeVarInt(x);
         buf.writeVarInt(y);
-        worker.postMessage({ type: "packet", value: buf.flush() });
+        workers[0].postMessage({ type: "packet", value: buf.flush() });
     });
 
     canvas.addEventListener("mousedown", e => {
@@ -65,7 +78,7 @@ window.onload = () => {
         buf.writeVarInt(x);
         buf.writeVarInt(y);
         buf.writeVarInt(e.button);
-        worker.postMessage({ type: "packet", value: buf.flush() });
+        workers[0].postMessage({ type: "packet", value: buf.flush() });
         e.preventDefault();
     });
 
@@ -78,7 +91,7 @@ window.onload = () => {
         buf.writeVarInt(x);
         buf.writeVarInt(y);
         buf.writeVarInt(e.button);
-        worker.postMessage({ type: "packet", value: buf.flush() });
+        workers[0].postMessage({ type: "packet", value: buf.flush() });
         e.preventDefault();
     });
 
@@ -91,14 +104,14 @@ window.onload = () => {
         buf.writeVarInt(x);
         buf.writeVarInt(y);
         buf.writeVarInt(e.wheelDelta);
-        worker.postMessage({ type: "packet", value: buf.flush() });
+        workers[0].postMessage({ type: "packet", value: buf.flush() });
         e.preventDefault();
     });
 }
 
 let audioContext, audioWorklet;
 let soundPlaying = false;
-const receiveMessage = (worker) => async e => {
+const receiveMessage = (workers, worker) => async e => {
     switch (e.data.type) {
         case 0:
             worker.connected = true;
@@ -107,10 +120,11 @@ const receiveMessage = (worker) => async e => {
             alert("Disconnected");
             break;
         case 2:
+            if(location.protocol !== "https:") break;
             if (!audioContext) {
                 audioContext = new AudioContext({ sampleRate: e.data.value.sampleRate });
-                await audioContext.audioWorklet.addModule("audio-processor.js", { outputChannelCount: [e.data.value.channels] });
-                audioWorklet = new AudioWorkletNode(audioContext, "audio-processor");
+                await audioContext.audioWorklet.addModule("audio-processor.js");
+                audioWorklet = new AudioWorkletNode(audioContext, "audio-processor", { outputChannelCount: [e.data.value.channels] });
                 audioWorklet.connect(audioContext.destination);
                 audioContext.resume();
             }
@@ -119,6 +133,11 @@ const receiveMessage = (worker) => async e => {
         case 3:
             const canvas = document.getElementsByClassName("screen")[0];
             canvas.setAttribute("cursor", e.data.value);
+            break;
+        case 4:
+            for(const worker of workers) {
+                worker.postMessage({type: "buffer", value: e.data.value});
+            }
             break;
     }
 };

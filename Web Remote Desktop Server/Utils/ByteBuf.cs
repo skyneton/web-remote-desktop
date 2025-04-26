@@ -29,7 +29,7 @@ namespace WebRemoteDesktopServer.Utils
             }
 
             buf.Add((byte)integer);
-            return buf.ToArray();
+            return [.. buf];
         }
 
         public static int ReadVarInt(Stream stream)

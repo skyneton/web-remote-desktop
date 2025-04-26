@@ -1,15 +1,22 @@
 ﻿using System.Net;
+using System.Text;
 
 namespace WebRemoteDesktopServer.Web.Page
 {
     class WebJavascriptMainPage : IPage
     {
+        private readonly byte[] page;
+        public WebJavascriptMainPage(int socketCount)
+        {
+            page = Encoding.UTF8.GetBytes(
+                Encoding.UTF8.GetString(Properties.Resources.JSMain)
+                .Replace("\"%{SOCKET_COUNT}%\"", socketCount.ToString()));
+        }
         public void Write(HttpListenerResponse response)
         {
-            var value = Properties.Resources.JSMain;
-            response.ContentLength64 = value.LongLength;
+            response.ContentLength64 = page.LongLength;
             response.ContentType = "text/javascript";
-            response.OutputStream.Write(value);
+            response.OutputStream.Write(page);
         }
     }
 }
