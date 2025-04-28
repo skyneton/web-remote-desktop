@@ -13,7 +13,6 @@ namespace WebRemoteDesktopServer.Capture
         private const int ImageThreading = 32767; // maximum gdi+ jpeg width
         internal static int beforeWidth, beforeHeight;
         internal static byte[] pixelData = [];
-        internal static ConcurrentQueue<PacketWebSocket> AcceptedClients = [];
         internal static void Run(ImageProcess process)
         {
             if (PacketWebSocket.Count <= 0) return;
@@ -50,17 +49,7 @@ namespace WebRemoteDesktopServer.Capture
             if (force)
             {
                 PacketWebSocket.Broadcast(new PacketOutImageFullScreen(screen.Width, screen.Height, ImageCompress.PixelToImage(screen, ImageFormat.Jpeg)), 0);
-                AcceptedClients.Clear();
-            }else
-            {
-                var packet = new PacketOutImageFullScreen(screen.Width, screen.Height, ImageCompress.PixelToImage(screen, ImageFormat.Jpeg));
-                while (!AcceptedClients.IsEmpty)
-                {
-                    if (!AcceptedClients.TryDequeue(out var client)) continue;
-                    client.SendPacket(packet);
-                }
             }
-
                 var cursorInfo = LowBinder.GetCursorInfo(out var success);
             if (success && Worker.CursorInfo != cursorInfo.hCursor)
             {

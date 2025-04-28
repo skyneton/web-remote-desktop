@@ -55,7 +55,7 @@ namespace WebRemoteDesktopServer.Web
             if (idx == 0)
             {
                 SetResolution(ws);
-                ScreenCapture.AcceptedClients.Enqueue(ws);
+                SendScreen(ws);
                 await ws.SendPacket(new PacketOutCursorType(Worker.CursorInfo));
             }
             await ws.SendPacket(new PacketOutChunkInfo((byte)Worker.CurrentImageProcess.Quality));
@@ -92,6 +92,14 @@ namespace WebRemoteDesktopServer.Web
                 }
                 sockets.Clear();
             }
+        }
+
+        private static async void SendScreen(PacketWebSocket socket)
+        {
+            await Task.Delay(20);
+            var info = DisplaySettings.GetResolution();
+            using var screen = ScreenCapture.Screenshot(info.Width, info.Height, Worker.CurrentImageProcess.Format);
+            socket.SendPacket(new PacketOutImageFullScreen(screen.Width, screen.Height, ImageCompress.PixelToImage(screen, ImageFormat.Jpeg)));
         }
 
         //private static bool TryGetKeyCode(string code, string key, out int keyCode)
