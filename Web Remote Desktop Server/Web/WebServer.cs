@@ -10,7 +10,7 @@ namespace WebRemoteDesktopServer.Web
         public WebServer(string domain, int port = 80)
         {
             ServicePointManager.MaxServicePointIdleTime = int.MaxValue;
-            listener.TimeoutManager.MinSendBytesPerSecond = 0;
+            //listener.TimeoutManager.MinSendBytesPerSecond = 0;
             listener.Prefixes.Add($"{domain}:{port}/");
             listener.AuthenticationSchemes = AuthenticationSchemes.Anonymous;
             listener.Start();

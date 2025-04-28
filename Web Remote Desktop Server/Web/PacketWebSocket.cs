@@ -55,7 +55,7 @@ namespace WebRemoteDesktopServer.Web
             if (idx == 0)
             {
                 SetResolution(ws);
-                SendScreen(ws);
+                ScreenCapture.AcceptedClients.Enqueue(ws);
                 await ws.SendPacket(new PacketOutCursorType(Worker.CursorInfo));
             }
             await ws.SendPacket(new PacketOutChunkInfo((byte)Worker.CurrentImageProcess.Quality));
@@ -189,13 +189,6 @@ namespace WebRemoteDesktopServer.Web
             var width = buf.ReadVarInt();
             var height = buf.ReadVarInt();
             if (Count <= 0) Worker.SetResolution(width, height);
-        }
-
-        private static void SendScreen(PacketWebSocket socket)
-        {
-            var info = DisplaySettings.GetResolution();
-            using var screen = ScreenCapture.Screenshot(info.Width, info.Height, Worker.CurrentImageProcess.Format);
-            socket.SendPacket(new PacketOutImageFullScreen(screen.Width, screen.Height, ImageCompress.PixelToImage(screen, ImageFormat.Jpeg)));
         }
 
         public Task? SendPacket(IPacket packet)
