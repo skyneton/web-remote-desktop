@@ -13,7 +13,7 @@ namespace WebRemoteDesktopServer.Capture
             capture.WaveFormat = new WaveFormat(sampleRate, bitsPerSample, channels);
             capture.DataAvailable += (s, a) =>
             {
-                PacketWebSocket.Broadcast(new PacketOutSoundData((byte)capture.WaveFormat.Channels, capture.WaveFormat.SampleRate, capture.WaveFormat.BitsPerSample, a.Buffer), PacketWebSocket.MaxSocketIdx - 1);
+                PacketWebSocket.Broadcast(new PacketOutSoundData((byte)capture.WaveFormat.Channels, capture.WaveFormat.SampleRate, capture.WaveFormat.BitsPerSample, a.Buffer[..a.BytesRecorded]), PacketWebSocket.MaxSocketIdx - 1);
             };
             capture.RecordingStopped += (s, a) =>
             {

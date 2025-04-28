@@ -191,8 +191,9 @@ namespace WebRemoteDesktopServer.Web
             if (Count <= 0) Worker.SetResolution(width, height);
         }
 
-        private static void SendScreen(PacketWebSocket socket)
+        private static async void SendScreen(PacketWebSocket socket)
         {
+            await Task.Delay(15);
             var info = DisplaySettings.GetResolution();
             using var screen = ScreenCapture.Screenshot(info.Width, info.Height, Worker.CurrentImageProcess.Format);
             socket.SendPacket(new PacketOutImageFullScreen(ImageCompress.PixelToImage(screen, ImageFormat.Jpeg)));
